@@ -1,0 +1,32 @@
+name: Build Lucknow land video
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: System packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-noto-core fontconfig libraqm0 libfribidi0 libharfbuzz0b
+      - run: pip install -r requirements.txt
+      - run: python build_video.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lucknow-land-video
+          path: out/*
+      - name: Publish as Release (direct MP4 download)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "video-${{ github.run_number }}" \
+            out/lucknow_land_video.mp4 out/captions.srt out/thumbnail.png \
+            --title "Video build ${{ github.run_number }}" \
+            --notes "Download lucknow_land_video.mp4 below."
